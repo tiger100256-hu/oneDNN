@@ -42,7 +42,8 @@ status_t eltwise_desc_init(eltwise_desc_t *eltwise_desc, prop_kind_t prop_kind,
                     backward_data)
             && math::is_eltwise_ok(src_desc->data_type, alg_kind, alpha, beta)
             && IMPLICATION(!is_fwd, !any_null(diff_src_desc, diff_dst_desc))
-            && IMPLICATION(alg_kind == eltwise_round, is_fwd)
+            && IMPLICATION(one_of(alg_kind, eltwise_round, eltwise_hsigmoid, eltwise_round_half_away_from_zero, eltwise_round_half_to_even),
+                           is_fwd)
             && IMPLICATION(is_fwd, !memory_desc_wrapper(src_desc).format_any());
     if (!args_ok) return invalid_arguments;
 
