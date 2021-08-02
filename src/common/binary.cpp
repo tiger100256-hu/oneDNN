@@ -38,7 +38,7 @@ status_t dnnl_binary_primitive_desc_create(
     bool args_ok = !any_null(src0_md, src1_md, dst_md)
             && one_of(alg_kind, binary_add, binary_mul, binary_max, binary_min,
                     binary_div, binary_sub, binary_ge, binary_gt, binary_le,
-                    binary_lt, binary_eq, binary_ne)
+                    binary_lt, binary_eq, binary_ne, binary_prelu)
             // TODO - Add support for mutual or bi-directional broadcasts
             && !memory_desc_wrapper(src0_md).format_any();
     if (!args_ok) return invalid_arguments;
