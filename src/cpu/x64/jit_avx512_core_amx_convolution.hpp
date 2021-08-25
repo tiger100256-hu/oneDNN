@@ -30,6 +30,7 @@
 #include "cpu/x64/cpu_reducer.hpp"
 #include "cpu/x64/jit_avx512_core_amx_conv_kernel.hpp"
 #include "cpu/x64/jit_transpose_utils.hpp"
+#include "cpu/x64/jit_avx512_core_amx_decompress_kernel.hpp"
 
 namespace dnnl {
 namespace impl {
@@ -72,20 +73,24 @@ struct jit_avx512_core_amx_convolution_fwd_t : public primitive_t {
                             dst_md(0)->data_type);
 
             bool ok = is_fwd()
-                    && set_default_alg_kind(alg_kind::convolution_direct)
+                    && (set_default_alg_kind(alg_kind::convolution_direct)
+                        || set_default_alg_kind(alg_kind::convolution_compress))
                     && (is_bf16_convolution || is_int8_convolution)
                     && !has_zero_dim_memory() && zero_points_ok();
             if (!ok) return status::unimplemented;
 
-            CHECK(jit_avx512_core_amx_fwd_kernel_t::init_conf(jcp_, *desc(),
-                    src_md_, weights_md_, dst_md_, bias_md_, attr_,
-                    dnnl_get_max_threads()));
-
+            status_t status = jit_avx512_core_amx_fwd_kernel_t::init_conf(jcp_,
+                    *desc(), src_md_, weights_md_, dst_md_, bias_md_, attr_,
+                    dnnl_get_max_threads());
+            if (status != status::success) return status;
+            status = jit_avx512_core_amx_decompress_kernel_t::init_conf();
+            // if (status != status::success) return status;
             auto scratchpad = scratchpad_registry().registrar();
-            CHECK(jit_avx512_core_amx_fwd_kernel_t::init_scratchpad(
-                    scratchpad, jcp_, *attr()));
-
-            return status::success;
+            status = jit_avx512_core_amx_fwd_kernel_t::init_scratchpad(
+                    scratchpad, jcp_, *attr());
+            jit_avx512_core_amx_decompress_kernel_t::init_scratchpad(
+                    scratchpad, jcp_, *attr());
+            return status;
         }
 
         jit_conv_conf_t jcp_;
@@ -107,6 +112,10 @@ struct jit_avx512_core_amx_convolution_fwd_t : public primitive_t {
         CHECK(safe_ptr_assign(kernel_,
                 new jit_avx512_core_amx_fwd_kernel_t(
                         pd()->jcp_, *pd()->attr(), *pd()->dst_md(0))));
+        CHECK(safe_ptr_assign(decomp_kernel_,
+                new jit_avx512_core_amx_decompress_kernel_t(
+                        pd()->jcp_)));
+        status_t status = decomp_kernel_->create_kernel();
         return kernel_->create_kernel();
     }
 
@@ -127,6 +136,7 @@ private:
             const memory_tracking::grantor_t &scratchpad) const;
 
     std::unique_ptr<jit_avx512_core_amx_fwd_kernel_t> kernel_;
+    std::unique_ptr<jit_avx512_core_amx_decompress_kernel_t> decomp_kernel_;
 };
 
 template <impl::data_type_t diff_src_type, impl::data_type_t wei_type,
