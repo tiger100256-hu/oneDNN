@@ -934,9 +934,8 @@ status_t init_ip_conf(cpu_isa_t isa, jit_brgemm_primitive_conf_t &jbgp,
             weights_md = want_wei_md;
             return status::success;
         }
-        // return (want_wei_md == weights_md) ? status::success
-        //                                    : status::unimplemented;
-        return status::success;
+         return (want_wei_md == weights_md) ? status::success
+                                            : status::unimplemented;
     };
 
     jbgp.brg_type = brgemm_addr;
@@ -948,6 +947,11 @@ status_t init_ip_conf(cpu_isa_t isa, jit_brgemm_primitive_conf_t &jbgp,
         jbgp.hint_prefetching = brgemm_kernel_prefetching_t::brgemm_prf_output1;
     CHECK(set_or_check_tags());
     CHECK(attr.set_default_formats(&dst_md));
+
+    if (jbgp.weights_compressed) {
+        weights_md.extra.flags = memory_extra_flags::ip_compression;
+        weights_md.extra.compensation_mask = 13;
+    }
 
     switch (jbgp.prop_kind) {
         case forward_training:
