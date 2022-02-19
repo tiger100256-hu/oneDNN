@@ -246,6 +246,7 @@ void jit_uni_postops_injector_t<isa, Vmm>::compute_vector_range(
             }
 
             post_ops_data_offset += depthwise_injectors[depthwise_inj_idx]->memoryStep();
+            ++rhs_arg_idx;
             depthwise_inj_idx++;
         } else if (post_op.is_quantization()) {
             std::vector<std::pair<int, std::set<size_t>>> vecOfVmmIdxsSets;
@@ -303,6 +304,7 @@ void jit_uni_postops_injector_t<isa, Vmm>::compute_vector_range(
             }
 
             post_ops_data_offset += quantization_injectors[quantization_inj_idx]->memoryStep();
+            ++rhs_arg_idx;
             quantization_inj_idx++;
         } else {
             const auto lam = lambda_jit_injectors_.find(post_op.kind);
