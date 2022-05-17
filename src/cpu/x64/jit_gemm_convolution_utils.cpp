@@ -74,7 +74,7 @@ struct jit_pp_kernel_t : pp_kernel_t, public jit_generator {
             const binary_injector::static_params_t bsp {this->reg_abi_bak, rhs_sp};
             jit_binary_injector_ = utils::make_unique<
                     binary_injector::jit_uni_binary_injector_t<isa>>(
-                    this, bsp);            
+                    this, bsp);
         }
         if (post_ops_.len() > 0 && !only_eltwise) {
             vreg_d_weights = Vmm(idx_compute_vreg_max_--);
@@ -155,6 +155,7 @@ private:
     Xbyak::Reg64 reg_d_bias = r15;
     Xbyak::Reg64 reg_post_ops_data = rax;
     Vmm vreg_d_weights, vreg_d_bias;
+    Xbyak::Reg64 reserved_eltwise_gpr = r10;
 
     int idx_compute_vreg_start_;
     int idx_compute_vreg_max_;
