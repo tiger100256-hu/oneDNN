@@ -116,6 +116,7 @@ struct jit_avx512_core_amx_convolution_fwd_t : public primitive_t {
                 new jit_avx512_core_amx_decompress_kernel_t(
                         pd()->jcp_)));
         status_t status = decomp_kernel_->create_kernel();
+	if (status != status::success) return status;
         return kernel_->create_kernel();
     }
 

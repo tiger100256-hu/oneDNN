@@ -312,7 +312,7 @@ struct simple_reorder_impl<SIMPLE_REORDER_TEMPL_CALL,
                 const int ic_block = nstl::min(i_blksize, IC - I * i_blksize);
                 int bitmask_idx = (O * NB_IC * H * W + I * H * W + h * W + w) 
                                     * i_outer_blksize;
-                auto max_outp = &outp[o_blksize * i_blksize];
+                // auto max_outp = &outp[o_blksize * i_blksize];
                 const float *scales_here = &scales[(D_mask == 1) ? 0 : (O * o_blksize)];
                 int non_zeros = 0;
                 comp_tile_len_ptr[comp_tile_len_index] = cl_length;
@@ -398,9 +398,9 @@ struct simple_reorder_impl<SIMPLE_REORDER_TEMPL_CALL,
       const int plain_o_stride = input_d.blocking_desc().strides[0];
       const int plain_i_stride = input_d.blocking_desc().strides[1];
 
-      const float *scales = pd->attr()->output_scales_.scales_;
-      const size_t D_mask = utils::array_product(input_d.dims(),
-              math::ilog2q(pd->attr()->output_scales_.mask_ + 1));
+      // const float *scales = pd->attr()->output_scales_.scales_;
+      // const size_t D_mask = utils::array_product(input_d.dims(),
+      //         math::ilog2q(pd->attr()->output_scales_.mask_ + 1));
 
       size_t offset = padded_dims[0] * padded_dims[1];
 
@@ -419,9 +419,9 @@ struct simple_reorder_impl<SIMPLE_REORDER_TEMPL_CALL,
             auto inp = &input[input_d.blk_off(o_blksize * O, i_blksize * I)];
             const int oc_block = nstl::min(o_blksize, OC - O * o_blksize);
             const int ic_block = nstl::min(i_blksize, IC - I * i_blksize);
-            auto max_outp = &outp[o_blksize * i_blksize];
-            const float *scales_here
-                     = &scales[(D_mask == 1) ? 0 : (O * o_blksize)];
+            // auto max_outp = &outp[o_blksize * i_blksize];
+            // const float *scales_here
+            //         = &scales[(D_mask == 1) ? 0 : (O * o_blksize)];
             int non_zeros = 0, zeros = 0;
             int bitmask_idx = (O * NB_IC + I) * i_blksize;
             comp_tile_len_ptr[comp_tile_len_index] = cl_length;

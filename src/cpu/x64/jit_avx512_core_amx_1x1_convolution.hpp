@@ -77,9 +77,10 @@ struct jit_avx512_core_amx_1x1_convolution_fwd_t : public primitive_t {
                     && !has_zero_dim_memory() && zero_points_ok();
             if (!ok) return status::unimplemented;
 
-            CHECK(jit_avx512_core_amx_1x1_fwd_kernel_t::init_conf(jcp_, *desc(),
+	    status_t status = jit_avx512_core_amx_1x1_fwd_kernel_t::init_conf(jcp_, *desc(),
                     src_md_, weights_md_, dst_md_, bias_md_, attr_,
-                    dnnl_get_max_threads()));
+                    dnnl_get_max_threads());
+	    if (status != status::success) return status;
 
             status = jit_avx512_core_amx_decompress_kernel_t::init_conf();
 
