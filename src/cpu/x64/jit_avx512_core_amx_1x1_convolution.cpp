@@ -134,8 +134,10 @@ status_t jit_avx512_core_amx_1x1_convolution_fwd_t::execute_forward(
         p.tile_cfg_tail = tcfg + 64;
 
         amx_tile_configure(tcfg);
+        int8_t *decomp_buf_ptr = static_cast<int8_t *>(dnnl::impl::malloc(wei_oc_shift, 64));
+        int8_t &decomp_buf = *decomp_buf_ptr;
+        //alignas(64) int8_t decomp_buf[wei_oc_shift];
 
-        alignas(64) int8_t decomp_buf[wei_oc_shift];
 
         int mb {0}, g {0}, _osb {0}, _ocb {0};
         nd_iterator_init(start, mb, MB, g, jcp.ngroups, _osb, os_chunks,
@@ -233,6 +235,7 @@ status_t jit_avx512_core_amx_1x1_convolution_fwd_t::execute_forward(
             nd_iterator_step(mb, MB, g, jcp.ngroups, _osb, os_chunks, _ocb,
                     oc_chunks);
         }
+        delete decomp_buf_ptr;
 
         amx_tile_release();
     });

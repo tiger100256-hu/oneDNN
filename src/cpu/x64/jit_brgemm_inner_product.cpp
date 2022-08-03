@@ -329,7 +329,9 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
             amx_tile_configure(&brg_kernel_palettes_[base_brg_ker_idx][0]);
 
         const size_t decomp_buffer_size = (size_t)jbgp.ic * 64;
-        alignas(64) int8_t decomp_buf[decomp_buffer_size];
+        int8_t *decomp_buf_ptr = static_cast<int8_t *>(dnnl::impl::malloc(decomp_buffer_size, 64));
+        int8_t &decomp_buf = *decomp_buf_ptr;
+        // alignas(64) int8_t decomp_buf[decomp_buffer_size];
 
         int occ {0}, osc {0};
         nd_iterator_init(start, osc, os_chunks, occ, oc_chunks);
@@ -362,7 +364,7 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
                         && IMPLICATION(ocb_inner_most, ocb == 0);
                 ker(ithr_oc_mb, nthr_oc_mb, ithr_ic, n, ocb + ocb_s, cur_icc,
                         cur_icc == icc_start, osb, copy_buffer_a,
-                        decomp_buf);
+                        decomp_buf_ptr);
 
                 ++loop_start;
                 if (ocb_inner_most)
@@ -376,6 +378,7 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
             ++start;
             nd_iterator_step(osc, os_chunks, occ, oc_chunks);
         }
+        delete decomp_buf_ptr;
         if (is_amx) amx_tile_release();
     });
 

@@ -77,11 +77,9 @@ const impl_list_item_t *cpu_engine_impl_list_t::get_reorder_implementation_list(
     const bool do_conv_compression
             = dst_md->extra.flags == memory_extra_flags::conv_compression;
 
-    const bool do_comp_s8s8 = dst_md->extra.flags
+    const bool do_comp_s8s8 = (do_compression || do_conv_compression) ? false : dst_md->extra.flags
             & (memory_extra_flags::compensation_conv_s8s8
-                    | memory_extra_flags::compensation_conv_asymmetric_src)
-            & memory_extra_flags::ip_compression
-            & memory_extra_flags::conv_compression;
+                    | memory_extra_flags::compensation_conv_asymmetric_src);
 
     const auto &map = do_comp_s8s8 ? comp_s8s8_impl_list_map() :
         (do_compression ? compression_s8s8_impl_list_map() :

@@ -605,6 +605,7 @@ bool get_jit_dump();
 unsigned get_jit_profiling_flags();
 std::string get_jit_profiling_jitdumpdir();
 FILE *fopen(const char *filename, const char *mode);
+void *malloc(size_t size, int alignment);
 int getpagesize();
 
 // return current library fpmath_mode
