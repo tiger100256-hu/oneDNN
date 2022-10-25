@@ -1638,7 +1638,6 @@ template struct jit_uni_pool_kernel<avx>;
 template struct jit_uni_pool_kernel<avx2>;
 template struct jit_uni_pool_kernel<avx2_vnni_2>;
 template struct jit_uni_pool_kernel<avx512_core>;
-template struct jit_uni_pool_kernel<avx512_core_fp16>;
 
 } // namespace x64
 } // namespace cpu
