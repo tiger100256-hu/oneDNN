@@ -29,6 +29,7 @@
 #include "cpu/x64/brgemm/brgemm.hpp"
 #include "cpu/x64/cpu_barrier.hpp"
 #include "cpu/x64/cpu_reducer.hpp"
+#include "cpu/x64/jit_brgemm_decompress_kernel.hpp"
 #include "cpu/x64/jit_brgemm_inner_product_utils.hpp"
 #include "cpu/x64/jit_brgemm_post_ops.hpp"
 #include "cpu/x64/jit_brgemm_transpose_utils.hpp"
@@ -195,6 +196,12 @@ struct brgemm_inner_product_fwd_t : public primitive_t {
                 CHECK(brgemm_init_tiles(
                         pd()->brg_descs_[idx], &brg_kernel_palettes_[idx][0]));
         }
+
+        if (pd()->jbgp_.weights_compressed) {
+            CHECK(safe_ptr_assign(brg_decomp_kernel_,
+                    new jit_brgemm_decompress_kernel_t(&pd()->jbgp_)));
+        }
+
         if (pd()->jbgp_.use_buffer_a)
             CHECK(create_brgemm_copy_to_coarse(copy_src_kernel_, &pd()->jbgp_));
         if (pd()->jbgp_.nthr_ic_b > 1) {
@@ -219,6 +226,7 @@ private:
     std::unique_ptr<cpu_accumulator_1d_t<data_type::f32>> acc_ker_;
     char brg_kernel_palettes_[brgemm_inner_product_utils::
                     max_num_brg_kernels_ip][AMX_PALETTE_SIZE];
+    std::unique_ptr<jit_brgemm_decompress_kernel_t> brg_decomp_kernel_;
 };
 
 template <cpu_isa_t isa>
