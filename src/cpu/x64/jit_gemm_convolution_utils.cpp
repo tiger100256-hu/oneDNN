@@ -155,7 +155,6 @@ private:
     Xbyak::Reg64 reg_d_bias = r15;
     Xbyak::Reg64 reg_post_ops_data = rax;
     Vmm vreg_d_weights, vreg_d_bias;
-    Xbyak::Reg64 reserved_eltwise_gpr = r10;
 
     int idx_compute_vreg_start_;
     int idx_compute_vreg_max_;

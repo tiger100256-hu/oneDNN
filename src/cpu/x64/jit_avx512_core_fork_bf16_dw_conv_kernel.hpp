@@ -95,8 +95,6 @@ private:
     mask_t ktail_mask = k_oc_tail_mask;
     mask_t k_ch_tail_mask_extended = Xbyak::Opmask(3);
 
-    Xbyak::Reg64 reserved_eltwise_gpr = r10;
-
     Xbyak::Zmm zmm_ker_reg = Xbyak::Zmm(0);
     Xbyak::Zmm zmm_src_reg = Xbyak::Zmm(1);
     Xbyak::Zmm zmm_prev_dst = Xbyak::Zmm(31);

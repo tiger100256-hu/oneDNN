@@ -87,8 +87,6 @@ private:
     reg64_t aux_reg_ch_blocks = reg_ur_w;
     reg64_t aux_reg_blocks_offset = abi_not_param1;
 
-    Xbyak::Reg64 reserved_eltwise_gpr = r10;
-
     reg64_t reg_d_weights = imm_addr64;
     reg64_t reg_d_bias = iter_kh;
     int base_post_ops_data_offset = 0;
