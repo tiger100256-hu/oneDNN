@@ -2742,6 +2742,10 @@ public:
 #if !defined(NDEBUG) && defined(__GNUC__)
 	std::map<size_t, std::string> debug_traces;
 	void debug_trace() {
+		static bool enable_trace = std::getenv("ONEDNN_JIT_DUMP") && atoi(std::getenv("ONEDNN_JIT_DUMP")) != 0;
+		if (!enable_trace)
+			return;
+
 		void *array[8];
 		int size = backtrace(array, 8);
 		char **strings = backtrace_symbols(array, size);
