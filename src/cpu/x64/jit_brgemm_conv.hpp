@@ -51,31 +51,8 @@ struct brgemm_convolution_fwd_t : public primitive_t {
 
         ~pd_t() = default;
 
-        // ------- DECLARE_COMMON_PD_t -----
-        pd_t *clone() const override {
-            auto new_pd = utils::make_unique<pd_t>(*this);
-            if (!new_pd->is_initialized()) return nullptr;
-            new_pd->brgs_.resize(brgs_sz_);
-            for (int i = 0; i < brgs_sz_; i++) {
-                new_pd->brgs_[i] = brgs_[i];
-                new_pd->bd_masks[i] = bd_masks[i];
-            }
-            return new_pd.release();
-        }
-
-        status_t create_primitive(
-                std::pair<std::shared_ptr<primitive_t>, bool> &primitive,
-                engine_t *engine,
-                const cache_blob_t &cache_blob) const override {
-            return primitive_t::create_primitive_common<
-                    brgemm_convolution_fwd_t, pd_t>(
-                    primitive, this, engine, false, cache_blob);
-        }
-
-        const char *name() const override {
-            return JIT_IMPL_NAME_HELPER("brgconv:", isa, "");
-        }
-        // ---------------------------------
+        DECLARE_COMMON_PD_T(JIT_IMPL_NAME_HELPER("brgconv:", isa, ""),
+                brgemm_convolution_fwd_t);
 
         status_t init(engine_t *engine);
 
