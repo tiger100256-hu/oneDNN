@@ -31,7 +31,7 @@
 /* in order to make selinux happy memory that would be marked with X-bit should
  * be obtained with mmap */
 // #define XBYAK_USE_MMAP_ALLOCATOR
-#ifndef DNNL_ENABLE_EXCEPTIONS
+#ifdef DNNL_XBYAK_NO_EXCEPTION
 #define XBYAK_NO_EXCEPTION
 #endif
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
