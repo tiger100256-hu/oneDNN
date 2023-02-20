@@ -475,8 +475,11 @@ void _jit_avx512_core_x8s8s32x_1x1_conv_kernel<Vmm>::reduce_loop(
             }
         }
 
-        if (jcp.dst_dt == data_type::bf16 && !isa_has_bf16(jcp.isa))
-            bf16_emu_->init_vcvtneps2bf16();
+        if (jcp.dst_dt == data_type::bf16 && !isa_has_bf16(jcp.isa)) {
+            // bf16_emu_reserv_4 is used as reg_oc_off in these postOps
+            bool preserve_scrach = jcp.with_depthwise || jcp.with_quantization;
+            bf16_emu_->init_vcvtneps2bf16(preserve_scrach);
+        }
 
         // store to the destination
         if (jcp.dst_dt == data_type::bf16 && isa_has_bf16(jcp.isa)) {
