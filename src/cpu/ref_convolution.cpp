@@ -212,8 +212,7 @@ status_t ref_convolution_fwd_t::execute_forward(const exec_ctx_t &ctx) const {
                 args.ctx = &ctx;
                 args.l_offset = dst_l_off;
                 args.dst_md = pd()->dst_md();
-                ref_post_ops->execute(d, args);
-
+                ref_post_ops->execute(d, args, g*OC + oc);
                 io::store_float_value(dst_d.data_type(), d, dst, dst_off);
             });
 
