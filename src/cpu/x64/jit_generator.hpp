@@ -1728,7 +1728,7 @@ public:
         if (is_valid_isa(avx))
             vpackssdw(x1, x2, op);
         else {
-            assert(x1.getIdx() == x2.getIdx());
+            if (x1.getIdx() != x2.getIdx()) movdqa(x1, x2);
             packssdw(x1, op);
         }
     }
@@ -1742,7 +1742,7 @@ public:
         if (is_valid_isa(avx))
             vpackuswb(x1, x2, op);
         else {
-            assert(x1.getIdx() == x2.getIdx());
+            if (x1.getIdx() != x2.getIdx()) movdqa(x1, x2);
             packuswb(x1, op);
         }
     }
@@ -1756,7 +1756,7 @@ public:
         if (is_valid_isa(avx))
             vpacksswb(x1, x2, op);
         else {
-            assert(x1.getIdx() == x2.getIdx());
+            if (x1.getIdx() != x2.getIdx()) movdqa(x1, x2);
             packsswb(x1, op);
         }
     }
@@ -2020,7 +2020,7 @@ public:
         if (is_valid_isa(avx))
             vpackusdw(x1, x2, op);
         else {
-            assert(x1.getIdx() == x2.getIdx());
+            if (x1.getIdx() != x2.getIdx()) movdqa(x1, x2);
             packusdw(x1, op);
         }
     }
