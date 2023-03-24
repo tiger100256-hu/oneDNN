@@ -54,9 +54,11 @@ const std::map<pk_impl_key_t, std::vector<impl_list_item_t>> &impl_list_map() {
     static const std::map<pk_impl_key_t, std::vector<impl_list_item_t>> the_map = REG_POOLING_P({
         {{forward}, {
             /* fp */
+            CPU_INSTANCE_X64(jit_uni_pooling_fwd_t, avx512_core_fp16, f16)
             CPU_INSTANCE_X64(jit_uni_pooling_fwd_t, avx512_core, bf16)
             CPU_INSTANCE_X64(jit_uni_pooling_fwd_t, avx512_core, f32)
             CPU_INSTANCE_X64(jit_uni_pooling_fwd_t, avx2_vnni_2, bf16)
+            CPU_INSTANCE_X64(jit_uni_pooling_fwd_t, avx2_vnni_2, f16)
             CPU_INSTANCE_X64(jit_uni_pooling_fwd_t, avx2, f32)
             CPU_INSTANCE_X64(jit_uni_pooling_fwd_t, avx, f32)
             CPU_INSTANCE_X64(jit_uni_pooling_fwd_t, sse41, f32)
