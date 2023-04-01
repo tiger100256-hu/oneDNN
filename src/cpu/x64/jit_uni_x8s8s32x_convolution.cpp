@@ -735,6 +735,8 @@ status_t jit_uni_x8s8s32x_convolution_fwd_t<isa>::execute_forward_3d_dw(const ex
 
     DEFINE_ARG_SCALES_BUFFER(src_scales, DNNL_ARG_SRC);
     DEFINE_ARG_SCALES_BUFFER(wei_scales, DNNL_ARG_WEIGHTS);
+    DEFINE_ARG_SCALES_BUFFER(dst_scales, DNNL_ARG_DST);
+
 
     const float *oscales = adjust_oscales(
             ctx.get_scratchpad_grantor(), src_scales, wei_scales);
@@ -800,6 +802,7 @@ status_t jit_uni_x8s8s32x_convolution_fwd_t<isa>::execute_forward_3d_dw(const ex
         p.kd_padding = kd_padding;
         p.kh_padding = kh_padding;
         p.scales = scales;
+        p.dst_scale = dst_scales;
         p.f_overflow = i_f_overflow;
         p.back_overflow = i_back_overflow;
         p.t_overflow = i_t_overflow;
