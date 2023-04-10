@@ -105,6 +105,7 @@ using x64_jit_uni_reorder_t = x64::jit_uni_reorder_t;
 template <data_type_t type_i, data_type_t type_o>
 using x64_wino_reorder_t = x64::wino_reorder_t<type_i, type_o>;
 #elif DNNL_AARCH64
+using aarch64_jit_blk_reorder_t = aarch64::jit_blk_reorder_t;
 using aarch64_jit_uni_reorder_t = aarch64::jit_uni_reorder_t;
 #endif
 
