@@ -170,6 +170,9 @@ int Cpu::getFilePathMaxTailNumPlus1(const char *path) {
   fflush(stdout);
 
   DIR *dir = opendir(dir_path);
+  if (dir == NULL)
+    return 0;
+
   struct dirent *dp;
 
   dp = readdir(dir);
