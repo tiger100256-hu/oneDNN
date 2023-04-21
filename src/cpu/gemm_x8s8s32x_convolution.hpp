@@ -126,7 +126,7 @@ private:
             const zero_point_call_params_t &zp,
             const memory_tracking::grantor_t &scratchpad,
             const void *post_ops_binary_rhs_arg_vec,
-            const exec_ctx_t &ctx, int MB,
+            const exec_ctx_t &ctx,
             const uint8_t *input_zp_base, const int32_t *output_compensation_base) const;
 
     using pp_ker_t = gemm_x8s8s32x_convolution_utils::pp_ker_t;
@@ -191,7 +191,7 @@ private:
             const char *diff_dst_base, const int8_t *wei_base,
             const char *bia_base, char *diff_src_base,
             const memory_tracking::grantor_t &scratchpad,
-            const exec_ctx_t &ctx, int MB) const;
+            const exec_ctx_t &ctx) const;
     const pd_t *pd() const { return (const pd_t *)primitive_t::pd().get(); }
 };
 
