@@ -14,6 +14,8 @@
 * limitations under the License.
 *******************************************************************************/
 
+#include <cstdint>
+
 #include "cpu/aarch64/acl_convolution_utils.hpp"
 #include "oneapi/dnnl/dnnl.hpp"
 
@@ -297,7 +299,7 @@ status_t init_conf_wino(acl_conv_conf_t &acp, memory_desc_t &src_md,
 
     const bool shape_ok
             // only unit strides allowed
-            = (acp.padstride_info.stride() == std::pair<uint, uint> {1, 1})
+            = (acp.padstride_info.stride() == std::pair<uint32_t, uint32_t> {1, 1})
             // Note: Compute Library supports arbitrary padding for wino kernels
             // but we only allow small padding to be consistent with oneDNN
             && (acp.padstride_info.pad().first <= 1) // padding left/right

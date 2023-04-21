@@ -57,7 +57,7 @@ void Cpu::setCacheHierarchy() {
      */
 
 // _SC_LEVEL<L>_DCACHE_SIZE macros are not defined on macOS.
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_WIN32)
 #define GET_CACHE_SIZE(ID) 0
 #else
 #define GET_CACHE_SIZE(ID) sysconf(ID)
@@ -130,6 +130,7 @@ void Cpu::setSysRegVal() {
  * @param[out] buf ex. /sys/devices/system/node
  */
 int Cpu::getRegEx(char *buf, const char *path, const char *regex) {
+#ifdef __linux__
   regex_t regexBuf;
   regmatch_t match[1];
 
@@ -151,7 +152,7 @@ int Cpu::getRegEx(char *buf, const char *path, const char *regex) {
 
   strncpy(buf, path + startIdx, endIdx - startIdx);
   buf[endIdx - startIdx] = '\0';
-
+#endif
   return 0;
 }
 
