@@ -1869,7 +1869,7 @@ private:
        in jit_generator.hpp.
        x_ptr_(in|out|scale|comp)_off keeps (base + offset) address. */
     XReg x_ptr_in_off = x16;
-    XReg x_ptr_out_off = x18;
+    XReg x_ptr_out_off = x4;
     XReg x_ptr_scale_off = x20;
     XReg x_ptr_comp_off = x17;
 
