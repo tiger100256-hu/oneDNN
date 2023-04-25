@@ -130,7 +130,7 @@ void skip_unimplemented_prb(const prb_t *prb, res_t *res) {
         return;
     }
 
-#if DNNL_AARCH64_USE_ACL
+#if DNNL_USE_ACL
     // Since ACL supports only forward pass.
     // Ref: https://github.com/oneapi-src/oneDNN/issues/1205
     if (prb->dir & FLAG_BWD) {

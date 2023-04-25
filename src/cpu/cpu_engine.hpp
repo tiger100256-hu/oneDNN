@@ -29,8 +29,8 @@
 
 #include "cpu/platform.hpp"
 
-#if (DNNL_AARCH64 || DNNL_ARM) && DNNL_AARCH64_USE_ACL
-#include "cpu/aarch64/acl_thread.hpp"
+#if DNNL_USE_ACL
+#include "cpu/acl/acl_thread.hpp"
 #endif
 
 #define CPU_INSTANCE_IMPL(...) \
@@ -47,10 +47,7 @@
 #define CPU_INSTANCE_AMX(...) REG_AMX_ISA(CPU_INSTANCE(__VA_ARGS__))
 #define CPU_INSTANCE_AARCH64(...) DNNL_AARCH64_ONLY(CPU_INSTANCE(__VA_ARGS__))
 #define CPU_INSTANCE_ARM(...) DNNL_ARM_ONLY(CPU_INSTANCE(__VA_ARGS__))
-#define CPU_INSTANCE_AARCH64_ACL(...) \
-    DNNL_AARCH64_ACL_ONLY(CPU_INSTANCE(__VA_ARGS__))
-#define CPU_INSTANCE_ARM_ACL(...) \
-    DNNL_ARM_ACL_ONLY(CPU_INSTANCE(__VA_ARGS__))
+#define CPU_INSTANCE_ACL(...) DNNL_ACL_ONLY(CPU_INSTANCE(__VA_ARGS__))
 #define CPU_INSTANCE_RV64GCV(...) DNNL_RV64GCV_ONLY(CPU_INSTANCE(__VA_ARGS__))
 
 namespace dnnl {
@@ -170,7 +167,7 @@ public:
         assert(index == 0);
         *engine = new cpu_engine_t();
 
-#if (DNNL_AARCH64 || DNNL_ARM) && DNNL_AARCH64_USE_ACL
+#if DNNL_USE_ACL
 #if DNNL_CPU_THREADING_RUNTIME == DNNL_RUNTIME_OMP
         // Number of threads in Compute Library is set by OMP_NUM_THREADS
         // dnnl_get_max_threads() == OMP_NUM_THREADS

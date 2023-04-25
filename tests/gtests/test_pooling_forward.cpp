@@ -349,7 +349,7 @@ using pooling_test_s32 = pooling_test_t<int32_t>;
 using pool_test_params_float = pool_test_params_t;
 
 // Since ACL supports only forward, to avoid triggering workspace check which is not available.
-#if DNNL_AARCH64_USE_ACL
+#if DNNL_USE_ACL
 #define forward_training forward_inference
 #endif
 
