@@ -1879,13 +1879,13 @@ void jit_brgemm_ip_fwd_conf_t::choose_loop_order() {
     float eff_occ_osc = eff(os_span_occ_osc, oc_span_occ_osc, ic_span);
     bool do_occ_osc = eff_occ_osc > 1.15 * eff_osc_occ;
 
-    const bool is_avx2 = is_superset(isa, avx2);
-    const bool is_f32_avx2 = is_f32_compute && is_avx2;
+    const bool is_avx512 = is_superset(isa, avx512_core);
+    const bool is_f32_avx512 = is_f32_compute && is_avx512;
     const bool is_xf16 = one_of(wei_dt, bf16, f16) || is_bf32;
     const bool is_int8 = one_of(src_dt, u8, s8) && wei_dt == s8;
     const bool is_compute_amx = (is_xf16 || is_int8) && is_amx;
 
-    if ((os_block < 32 || do_occ_osc) && (is_compute_amx || is_f32_avx2))
+    if ((os_block < 32 || do_occ_osc) && (is_f32_avx512))
         loop_order = icc_occ_osc_ocb_osb;
 }
 
