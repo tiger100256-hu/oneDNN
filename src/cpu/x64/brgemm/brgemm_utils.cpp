@@ -24,6 +24,7 @@
 #include "common/nstl.hpp"
 #include "common/type_helpers.hpp"
 #include "common/utils.hpp"
+#include <iostream>
 
 namespace dnnl {
 namespace impl {
@@ -263,9 +264,15 @@ status_t brgemm_blocking(brgemm_desc_t *brg) {
             max_bcast_block = calculate_max_bcast_block(brg, adj_ld_block2);
         }
 
-        const int min_block = 1;
-        float best_bd_block_eff = 0.f;
+        int min_block = 1;
         brg->bd_block = 1;
+        float best_bd_block_eff = 0.f;
+        if (!brg->is_dgmm && max_vpad != 0) {
+            min_block = max_vpad;
+            if (max_bcast_block < min_block) {
+                brg->bd_block = min_block;
+            }
+        }
         for (int bd_block = max_bcast_block; bd_block >= min_block;
                 bd_block--) {
             const auto bd_block_disb = static_cast<float>(brg->bcast_dim)
