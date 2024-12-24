@@ -22,6 +22,7 @@
 #include "primitive_desc_iface.hpp"
 #include "primitive_desc_iterator.hpp"
 #include "primitive_iface.hpp"
+#include "profiler.hpp"
 
 using namespace dnnl::impl;
 using namespace dnnl::impl::status;
@@ -73,11 +74,14 @@ status_t dnnl_primitive_desc::init() {
     if (!pd_iterator_) return status::out_of_memory;
     if (!pd_iterator_->is_initialized()) return out_of_memory;
 
+    double start_ms = get_msec();
     ++(*pd_iterator_);
+    double duration_ms = get_msec() - start_ms;
     if (*pd_iterator_ == pd_iterator_->end()) return unimplemented;
 
     pd_ = *(*pd_iterator_);
     engine_ = pd_iterator_->engine();
+    VPROF(start_ms, primitive, create, ",debug_desc_create", info(), duration_ms);
 
     return success;
 }
