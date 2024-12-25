@@ -70,8 +70,24 @@ void parallel(int nthr, const std::function<void(int, int)> &f) {
 //             },
 //             tbb::static_partitioner());
 //#elif DNNL_CPU_THREADING_RUNTIME == DNNL_RUNTIME_TBB_AUTO
-    tbb::parallel_for(
-            0, nthr, [&](int ithr) { f(ithr, nthr); });
+
+    static std::string tbb_policy = []() -> std::string {
+        std::string tbb_policy = std::string(std::getenv("TBB_PARTITIONER"));
+        std::cout << "onednn TBB_PARTITIONER:" << tbb_policy << std::endl;
+        return tbb_policy;
+    }();
+    if ("auto" == tbb_policy) {
+        tbb::parallel_for(
+        0, nthr, [&](int ithr) {
+            f(ithr, nthr);
+        });
+    } else if ("affinity" == tbb_policy) {
+        tbb::affinity_partitioner ap;
+        tbb::parallel_for(
+        0, nthr, [&](int ithr) {
+            f(ithr, nthr);
+        }, ap);
+    }
 #elif DNNL_CPU_THREADING_RUNTIME == DNNL_RUNTIME_THREADPOOL
     using namespace dnnl::impl::threadpool_utils;
     dnnl::threadpool_interop::threadpool_iface *tp = get_active_threadpool();
