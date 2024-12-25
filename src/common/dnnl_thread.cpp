@@ -1,6 +1,7 @@
 #include <functional>
 
 #include "dnnl_thread.hpp"
+#include <iostream>
 
 #if defined(DNNL_ENABLE_ITT_TASKS)
 #include "common/ittnotify.hpp"
@@ -12,7 +13,12 @@
 
 
 int dnnl_get_multiplier() {
-    return 32;
+    static int multiplier = []() -> int {
+        int multiplier = std::stoi(std::getenv("TBB_MULTIPLIER"));
+        std::cout << "onednn multiplier:" << multiplier << std::endl;
+        return  multiplier;
+    }();
+    return multiplier;
 }
 
 namespace dnnl {
