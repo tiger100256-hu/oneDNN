@@ -93,7 +93,7 @@ struct const_expr_value {
                     __LINE__); \
     } while (0)
 
-// Macro for boolean checks
+//// Macro for boolean checks
 #define VCONDCHECK( \
         apitype, logtype, logsubtype, component, condition, status, msg, ...) \
     do { \

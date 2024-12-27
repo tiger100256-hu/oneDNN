@@ -33,6 +33,7 @@
 #include "primitive_cache.hpp"
 #include "type_helpers.hpp"
 #include "verbose.hpp"
+#include "../../../../linux_perf.hpp"
 
 namespace dnnl {
 namespace impl {
@@ -508,8 +509,12 @@ protected:
                 = make_unique_pd<pd_t>((const pd_op_desc_t *)adesc, attr, hint);
         if (_pd == nullptr) return out_of_memory;
         if (!_pd->is_initialized()) return out_of_memory;
+        static std::atomic_int count;
+        auto prof1 = LinuxPerf::Profile("pd_init" + std::to_string(count++));
         CHECK(_pd->init(engine));
+        auto prof2 = LinuxPerf::Profile("pd_init_scratchpad_md" + std::to_string(count++));
         CHECK(_pd->init_scratchpad_md());
+        auto prof3 = LinuxPerf::Profile("safe_ptr_assign" + std::to_string(count++));
         return safe_ptr_assign(*pd, _pd.release());
     }
 

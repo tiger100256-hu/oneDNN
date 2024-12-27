@@ -22,6 +22,7 @@
 #include "c_types_map.hpp"
 #include "type_helpers.hpp"
 #include "utils.hpp"
+#include "../../../../linux_perf.hpp"
 
 using namespace dnnl::impl;
 using namespace dnnl::impl::utils;
@@ -241,10 +242,15 @@ status_t dnnl_convolution_forward_primitive_desc_create(
         return invalid_arguments;
 
     auto conv_desc = convolution_desc_t();
+
+    static std::atomic_int count;
+    auto prof1 = LinuxPerf::Profile("conv_desc_init" + std::to_string(count++));
     CHECK(dnnl::impl::conv_desc_init(&conv_desc, prop_kind, alg_kind, src_desc,
             weights_desc, bias_desc, dst_desc, strides, dilates, padding_l,
             padding_r));
+    auto prof2 = LinuxPerf::Profile("conv_attr_check" + std::to_string(count++));
     CHECK(dnnl::impl::conv_attr_check(conv_desc, engine, attr));
+    auto prof3 = LinuxPerf::Profile("primitive_desc_create" + std::to_string(count++));
     return primitive_desc_create(primitive_desc_iface, engine,
             (const op_desc_t *)&conv_desc, nullptr, attr);
 }

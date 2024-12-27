@@ -26,6 +26,7 @@
 #include "primitive_cache.hpp"
 #include "primitive_hashing.hpp"
 #include "type_helpers.hpp"
+#include "../../../../linux_perf.hpp"
 
 namespace dnnl {
 namespace impl {
@@ -90,6 +91,7 @@ struct primitive_desc_iterator_t : public c_compatible {
         while (++idx_ != last_idx_) {
             if (idx_ == skip_idx_) continue;
             primitive_desc_t *candidate_pd = nullptr;
+            auto prof3 = LinuxPerf::Profile("impl_list_idx_" + std::to_string(idx_));
             auto s = impl_list_[idx_](&candidate_pd, op_desc_, &attr_, engine_,
                     hint_fwd_pd_, offset_, skip_idx_);
             if (s == status::success) {

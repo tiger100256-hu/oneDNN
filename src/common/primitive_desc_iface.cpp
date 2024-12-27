@@ -22,6 +22,8 @@
 #include "primitive_desc_iface.hpp"
 #include "primitive_desc_iterator.hpp"
 #include "primitive_iface.hpp"
+#include "../../../../linux_perf.hpp"
+#include "profiler.hpp"
 
 using namespace dnnl::impl;
 using namespace dnnl::impl::status;
@@ -44,11 +46,15 @@ status_t primitive_desc_create(primitive_desc_iface_t **primitive_desc_iface,
             softmax);
     if (!known_primitive_kind) return invalid_arguments;
 
+    static std::atomic_int count;
+    auto prof1 = LinuxPerf::Profile("create_iface" + std::to_string(count++));
     auto pd_iface = utils::make_unique<primitive_desc_iface_t>(engine, op_desc,
             attr, hint_fwd_pd ? hint_fwd_pd->impl().get() : nullptr);
     if (pd_iface == nullptr) return out_of_memory;
+    auto prof2 = LinuxPerf::Profile("iface_init" + std::to_string(count++));
     CHECK(pd_iface->init());
 
+    auto prof3 = LinuxPerf::Profile("iface_release" + std::to_string(count++));
     *primitive_desc_iface = pd_iface.release();
 
     return success;
@@ -70,14 +76,22 @@ dnnl_primitive_desc::dnnl_primitive_desc(engine_t *engine,
 }
 
 status_t dnnl_primitive_desc::init() {
+    static std::atomic_int count;
     if (!pd_iterator_) return status::out_of_memory;
+    auto prof1 = LinuxPerf::Profile("pd_iterator_inited" + std::to_string(count++));
     if (!pd_iterator_->is_initialized()) return out_of_memory;
 
+    auto prof2 = LinuxPerf::Profile("pd_iterator_initadd" + std::to_string(count++));
+    double start_ms = get_msec();
     ++(*pd_iterator_);
+    double duration_ms = get_msec() - start_ms;
+    VPROF(start_ms, primitive, create, ",debug_desc_create", "iter_time", duration_ms);
     if (*pd_iterator_ == pd_iterator_->end()) return unimplemented;
 
+    auto prof3 = LinuxPerf::Profile("pd_iterator_getpd" + std::to_string(count++));
     pd_ = *(*pd_iterator_);
     engine_ = pd_iterator_->engine();
+    VPROF(start_ms, primitive, create, ",debug_desc_create", info(), duration_ms);
 
     return success;
 }

@@ -439,9 +439,12 @@ status_t brgemm_convolution_fwd_t<isa>::pd_t::init(engine_t *engine) {
     VDISPATCH_CONV(zero_points_ok(), VERBOSE_UNSUPPORTED_ZP_CFG);
     VDISPATCH_CONV(arg_scales_ok(), VERBOSE_UNSUPPORTED_SCALES_CFG);
 
+    static std::atomic_int count;
+    auto prof3 = LinuxPerf::Profile("pd_init_conf_" + std::to_string(count++));
     CHECK(brgemm_convolution_utils::init_conf(jcp_, isa, *desc(), src_md_,
             weights_md_, dst_md_, bias_md_, attr_, dnnl_get_max_threads()));
 
+    auto prof9 = LinuxPerf::Profile("pd_init_conf_end" + std::to_string(count++));
     // 1. The unrolled kernel can be used for exec_trans and exec_base and for
     // amx only. For exec_base it makes sense to use unrolled kernel only if
     // there is no padding by width.
@@ -634,6 +637,7 @@ status_t brgemm_convolution_fwd_t<isa>::pd_t::init(engine_t *engine) {
             && (jcp_.ic / jcp_.ic_block <= 1)
             && (KD_BLOCK == KD && KH_BLOCK == KH);
 
+    auto prof4 = LinuxPerf::Profile("add_brg_descriptor_1" + std::to_string(count++));
     for (const auto &key_value_pair : batchsizes) {
         const int kd_b = key_value_pair.first[0];
         const int kd_e = key_value_pair.first[1];
@@ -654,6 +658,7 @@ status_t brgemm_convolution_fwd_t<isa>::pd_t::init(engine_t *engine) {
     }
 
     if (jcp_.exec_type == exec_base) {
+        auto prof4 = LinuxPerf::Profile("exec_base" + std::to_string(count++));
         // create brgemm kernels for ow_blocks with padded areas and
         // apply post-ops on final iteration by kw to padded areas in ow_block
         int kw_s {0}, kw_full_s {0}, kw_full_f {0}, kw_f {0}, ow_s {0},
@@ -722,6 +727,7 @@ status_t brgemm_convolution_fwd_t<isa>::pd_t::init(engine_t *engine) {
 
     brgemm_convolution_utils::set_amx_wsp_per_thread(jcp_);
     auto scratchpad = scratchpad_registry().registrar();
+    auto prof5 = LinuxPerf::Profile("init_scratchpad" + std::to_string(count++));
     brgemm_convolution_utils::init_scratchpad(scratchpad, jcp_);
     if (jcp_.with_scales)
         book_precomputed_scales(scratchpad, attr()->scales_, OC(),

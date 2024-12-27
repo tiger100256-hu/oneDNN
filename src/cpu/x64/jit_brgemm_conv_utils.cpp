@@ -32,6 +32,7 @@
 #include "cpu/x64/injectors/jit_uni_postops_injector.hpp"
 #include "cpu/x64/jit_brgemm_conv_utils.hpp"
 #include "cpu/x64/jit_generator.hpp"
+#include "../../../../../linux_perf.hpp"
 
 namespace dnnl {
 namespace impl {
@@ -629,7 +630,11 @@ status_t brg_blocking_t::get_brgemm_ur(
     // Detailed simulation of brgemm convolution init
     if (sp_block <= 0 || ic_block <= 0 || oc_block <= 0)
         return status::invalid_arguments;
+
+    static std::atomic_int count;
+    auto prof7 = LinuxPerf::Profile("estimate_brgemm_ur" + std::to_string(count++));
     CHECK(estimate_brgemm_ur());
+    auto prof8 = LinuxPerf::Profile("estimate_brgemm_ur_end" + std::to_string(M));
 
     LDD = oc_without_padding;
 
@@ -637,6 +642,10 @@ status_t brg_blocking_t::get_brgemm_ur(
     const float beta = 1.0;
     const float beta_init = 0.0;
 
+    brgemm_desc_t brg;
+    brgemm_strides_t brg_strides;
+    brgemm_attr_t brgattr;
+    brgattr.max_bs = max_batch;
     for (int i = 0; i < M; i++) {
         auto vM = i + 1;
         // init only needed brgemm descriptors
@@ -650,8 +659,6 @@ status_t brg_blocking_t::get_brgemm_ur(
                 auto vN = (i_N) ? N_tail : N;
                 auto vK = (i_K) ? K_tail : K;
                 if (vN == 0 || vK == 0) continue;
-                brgemm_desc_t brg;
-                brgemm_strides_t brg_strides;
                 brg_strides.stride_a = ngroups * ic_without_padding
                         * (dilate_w + 1) * src_dsz;
                 // weights are padded by oc_block and last_ic_block
@@ -664,8 +671,6 @@ status_t brg_blocking_t::get_brgemm_ur(
                         vM, vN, vK, strides_ptr, is_bf32);
                 CHECK(brgemm_utils::brgemm_blocking(&brg));
 
-                brgemm_attr_t brgattr;
-                brgattr.max_bs = max_batch;
                 max_vpad = exec_type == exec_vpad ? nstl::max(l_pad, r_pad) : 0;
                 brgattr.max_top_vpad = max_vpad;
                 brgattr.max_bottom_vpad = max_vpad;
@@ -1893,8 +1898,11 @@ status_t init_conf(jit_brgemm_conv_conf_t &jcp, cpu_isa_t isa,
     // disabling verbose dispatch messages for unsupported isa for better readability
     if (!mayiuse(isa)) return status::unimplemented;
 
+    static std::atomic_int count;
+    auto prof3 = LinuxPerf::Profile("init_jcp" + std::to_string(count++));
     CHECK(init_jcp(
             jcp, isa, cd, src_md, weights_md, dst_md, bias_md, attr, nthreads));
+    auto prof4 = LinuxPerf::Profile("init_jcp_end" + std::to_string(count++));
 
     const bool is_int8_convolution = everyone_is(true,
             (jcp.src_dt == u8 || jcp.src_dt == s8), jcp.wei_dt == s8,
@@ -1954,6 +1962,8 @@ status_t init_conf(jit_brgemm_conv_conf_t &jcp, cpu_isa_t isa,
         start_ocb = nstl::min(div_up(jcp.oc, jcp.acc_simd_w), start_ocb);
 
         auto finish_ocb = 1;
+
+        auto prof5 = LinuxPerf::Profile("start_ocb" + std::to_string(start_ocb));
         for (auto ocb = start_ocb; ocb >= finish_ocb; ocb--) {
             brg_blocking_t cur_brgb = zero<decltype(best_brgb)>();
             cur_brgb.get_from_jcp(jcp);
@@ -1961,14 +1971,18 @@ status_t init_conf(jit_brgemm_conv_conf_t &jcp, cpu_isa_t isa,
             cur_brgb.nb_oc = utils::div_up(jcp.oc, cur_brgb.oc_block);
             if (!cur_brgb.fast_check_oc_block()) continue;
 
+            auto prof6 = LinuxPerf::Profile("calc_blocks" + std::to_string(ocb));
             const status_t blocking_ok = cur_brgb.calc_blocks();
             if (blocking_ok != status::success) continue;
 
+            auto prof7 = LinuxPerf::Profile("get_brgemm_ur" + std::to_string(ocb));
             const status_t st = cur_brgb.get_brgemm_ur(&attr, dst_md);
             if (st != status::success) continue;
+            auto prof8 = LinuxPerf::Profile("est_eff" + std::to_string(ocb));
             cur_brgb.eff = cur_brgb.est_eff();
             if (cur_brgb.eff > best_brgb.eff) best_brgb = cur_brgb;
         }
+        auto prof6 = LinuxPerf::Profile("start_ocb_end" + std::to_string(start_ocb));
         if (best_brgb.oc_block == 0 || best_brgb.ic_block == 0
                 || best_brgb.ow_block == 0)
             return false;
@@ -2175,9 +2189,11 @@ status_t init_conf(jit_brgemm_conv_conf_t &jcp, cpu_isa_t isa,
                     && (jcp.ow == 1 || jcp.ext_kw <= jcp.stride_w));
         }
 
+        auto prof4 = LinuxPerf::Profile("try_exec_type1" + std::to_string(count++));
         try_exec_type_res = try_exec_type();
     }
     if (try_exec_type_res == false && try_exec_vpad) {
+        auto prof4 = LinuxPerf::Profile("try_exec_type2" + std::to_string(count++));
         jcp.exec_type = exec_vpad;
         try_exec_type_res = try_exec_type();
         // to avoid case when both top and bottom virtual padding are non-zero
@@ -2193,9 +2209,11 @@ status_t init_conf(jit_brgemm_conv_conf_t &jcp, cpu_isa_t isa,
             jcp.hint_prefetching = brgemm_kernel_prefetching_t::brgemm_prf0;
         }
 
+        auto prof3 = LinuxPerf::Profile("try_exec_type2" + std::to_string(count++));
         try_exec_type_res = try_exec_type();
     }
 
+    auto prof5 = LinuxPerf::Profile("others" + std::to_string(count++));
     if (try_exec_type_res == false) return status::unimplemented;
 
 #if DNNL_CPU_THREADING_RUNTIME == DNNL_RUNTIME_THREADPOOL
