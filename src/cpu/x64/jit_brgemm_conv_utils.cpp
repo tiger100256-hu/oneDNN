@@ -1809,7 +1809,7 @@ status_t init_jcp(jit_brgemm_conv_conf_t &jcp, cpu_isa_t isa,
                     jcp.dst_zero_point, attr.zero_points_.common(DNNL_ARG_DST));
     VDISPATCH_CONV_IC(params_ok, VERBOSE_UNSUPPORTED_ZP_CFG);
 
-    jcp.nthr = nthreads * 3;
+    jcp.nthr = nthreads * 32;
     jcp.copy_block_only = false;
     jcp.amx_tile_load_xx = false;
     jcp.use_M_mask = 0;
