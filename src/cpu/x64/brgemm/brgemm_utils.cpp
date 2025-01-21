@@ -265,13 +265,13 @@ int calculate_max_bcast_block(brgemm_desc_t *brg, const int adj_ld_block2) {
             brg->is_bf16_emu, is_superset(brg->isa_impl, avx512_core)));
     const int bf16_emu_regs = brg->is_bf16_emu ? 4 : 0;
 
-    const auto store_regs = nstl::max(beta_regs,
-            nstl::max(
-                    postops_regs, nstl::max(compensation_regs, bf16_emu_regs)));
+    if (one_of(brg->dt_b, data_type::nf4) && brg->isa_impl == avx2) max_bcast_block -= 5;
+    if (one_of(brg->dt_b, data_type::f4_e2m1) && brg->isa_impl == avx2) max_bcast_block -= 2;
+    if (one_of(brg->dt_b, data_type::nf4, data_type::f4_e2m1) && brg->isa_impl != avx2) max_bcast_block -= 1;
+    if (brg->with_wei_decomp_zero_points && brg->wei_decomp_zero_points_stride == 0 && !brg->with_src_dyn_quant) max_bcast_block -= 1;
+    if (brg->with_src_dyn_quant) max_bcast_block -= 1;
 
-    const auto store_max_reg_count = max_isa_regs - store_regs;
-
-    auto store_max_bcast_block = store_max_reg_count / adj_ld_block2;
+    max_bcast_block /= adj_ld_block2;
 
     // ------------ final calculation ------------
     auto max_bcast_block
@@ -341,38 +341,36 @@ status_t brgemm_blocking_tmm(brgemm_desc_t *brg) {
                 best_bd_block = bd_block;
             }
         }
-        brg->bd_block = best_bd_block;
-        brg->bdb_tail = 0;
-        brg->bdb = min_bdb;
-        return true;
-    };
+        brg->bdb = brg->bcast_dim / brg->bd_block;
+        brg->bdb_tail = brg->bcast_dim % brg->bd_block;
 
-    auto set_decomposition_by_ld = [&]() {
-        if (brg->bd_block2 == 1 && brg->ldb > 0 && brg->ldb_tail == 0) {
-            if (brg->ldb % 3 == 0)
-                brg->ld_block2 = 3;
-            else if (brg->ldb % 2 == 0)
-                brg->ld_block2 = 2;
-            else
-                brg->ld_block2 = 1;
+        const data_type_t rd_block_dt = get_mac_emu_data_type(
+                brg->dt_a, brg->isa_impl, brg->isa_impl != avx2_vnni_2);
+        if (rd_block_dt == dnnl_data_type_undef) return status::unimplemented;
+        const int vnni_granularity
+                = (brg->is_f16 && brg->isa_impl == avx512_core_fp16)
+                ? 1
+                : data_type_vnni_granularity(brg->dt_a);
+
+        int rd_unroll = one_of(brg->dt_b, data_type::nf4, data_type::u4, data_type::s4, data_type::f4_e2m1) ? 32 : 4;
+        if (brg->with_grouped_wei_decomp && !brg->with_src_dyn_quant) {
+            auto min_group_size = nstl::min(brg->wei_decomp_scales_group_size, brg->wei_decomp_zero_points_group_size);
+            min_group_size = nstl::min(min_group_size, brg->src_scales_group_size);
+            rd_unroll = nstl::min(rd_unroll, min_group_size / vnni_granularity);
+            rd_unroll = nstl::min(rd_unroll, min_group_size / vnni_granularity);
+            brg->rd_block = rd_unroll * vnni_granularity;
+        } else if (brg->with_src_dyn_quant) {
+            brg->rd_block = brg->src_scales_group_size;
+            auto min_group_size = nstl::min(brg->wei_decomp_scales_group_size, brg->wei_decomp_zero_points_group_size);
+            brg->rd_block = nstl::min(brg->rd_block, min_group_size);
         } else {
-            brg->ld_block2
-                    = (brg->ldb > 0 && brg->ldb % 2 == 0 && brg->ldb_tail == 0
-                              && brg->bd_block2 < 3)
-                    ? 2
-                    : 1;
+            brg->rd_block = rd_unroll * vnni_granularity;
         }
         brg->ldb2 = brg->ldb / brg->ld_block2;
         brg->ldb2_tail = brg->ldb % brg->ld_block2;
 
-        // Re-adjust the bd_block2 if possible
-        if (brg->ld_block2 == 1 && !brg->is_M_tail && brg->ldb_tail == 0) {
-            brg->bd_block2 = (brg->bdb >= 3) ? 3 : (brg->bdb >= 2) ? 2 : 1;
-            brg->bdb2 = brg->bdb / brg->bd_block2;
-            brg->bdb2_tail = (brg->bd_block2 == 1) ? brg->bdb
-                                                   : brg->bdb % brg->bd_block2;
-        }
-    };
+        brg->rdb = brg->reduce_dim / brg->rd_block;
+        brg->rdb_tail = brg->reduce_dim % brg->rd_block;
 
     auto try_3x1_decomposition = [&](int width_step) {
         brg->is_M_tail = false;
