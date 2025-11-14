@@ -92,16 +92,12 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
 
     const void *src_scales
             = CTX_IN_MEM(const void *, DNNL_ARG_ATTR_SCALES | DNNL_ARG_SRC);
-    const void *wei_scales
+    const void *wei_scales_f
             = CTX_IN_MEM(const void *, DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS);
     const void *dst_scales
             = CTX_IN_MEM(const void *, DNNL_ARG_ATTR_SCALES | DNNL_ARG_DST);
 
-    DEFINE_ARG_SCALES_BUFFER(src_scales, DNNL_ARG_SRC);
-    DEFINE_ARG_SCALES_BUFFER(wei_scales_f, DNNL_ARG_WEIGHTS);
-    DEFINE_ARG_SCALES_BUFFER(dst_scales, DNNL_ARG_DST);
-
-    const int wei_scale_mask = pd()->attr()->scales_.get_mask(DNNL_ARG_WEIGHTS);
+    // const int wei_scale_mask = pd()->attr()->scales_.get_mask(DNNL_ARG_WEIGHTS);
     DEFINE_ZERO_POINTS_BUFFER_ATTR_U8(pd()->attr(), wei_zero_points, DNNL_ARG_WEIGHTS);
     auto wei_scales = reinterpret_cast<const uint8_t*>(wei_scales_f);
 
@@ -451,7 +447,7 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
                         post_ops_binary_rhs_arg_vec.data(),
                         static_cast<size_t>(oc), 0, dst, 0, nullptr, nullptr,
                         nullptr, false, 1, false, false, src_scales,
-                        wei_scales ? static_cast<const char *>(wei_scales)
+                        wei_scales ? reinterpret_cast<const char *>(wei_scales)
                                         + jbgp.is_oc_scale * oc * sizeof(float)
                                    : nullptr,
                         dst_scales};
@@ -560,7 +556,7 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
                         post_ops_binary_rhs_arg_vec.data(),
                         static_cast<size_t>(oc), 0, dst, 0, nullptr, nullptr,
                         nullptr, false, 1, false, false, src_scales,
-                        wei_scales ? static_cast<const char *>(wei_scales)
+                        wei_scales ? reinterpret_cast<const char *>(wei_scales)
                                         + jbgp.is_oc_scale * oc * sizeof(float)
                                    : nullptr,
                         dst_scales};
@@ -849,7 +845,7 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
                                     static_cast<size_t>(oc), 0, dst, 0, nullptr,
                                     nullptr, nullptr, true /* skip_accm */, 1,
                                     false, false, src_scales,
-                                    wei_scales ? static_cast<const char *>(
+                                    wei_scales ? reinterpret_cast<const char *>(
                                                          wei_scales)
                                                     + jbgp.is_oc_scale * oc
                                                             * sizeof(float)

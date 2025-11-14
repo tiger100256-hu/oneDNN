@@ -659,6 +659,7 @@ dim_t jit_brgemm_kernel_t<Wmm>::bd_compensation_offset(
     return sizeof(int32_t) * (ld * brg.ld_block + bd * brg.LDB);
 }
 
+// sacle_offset change name  to wei_scales_offset
 template <typename Wmm>
 dim_t jit_brgemm_kernel_t<Wmm>::wei_scales_offset(
         dim_t ld, bool is_tail) const noexcept {
@@ -674,12 +675,13 @@ dim_t jit_brgemm_kernel_t<Wmm>::zp_comp_a_offset(
                      : sizeof(int32_t) * ld * brg.ld_block;
 }
 
-template <typename Wmm>
-dim_t jit_brgemm_kernel_t<Wmm>::wei_scales_offset(
-        dim_t ld, bool is_tail) const noexcept {
-    return (is_tail) ? types::data_type_size(brg.wei_decomp_scales_dt) * brg.ldb_tail
-                     : types::data_type_size(brg.wei_decomp_scales_dt) * ld * brg.ld_block;
-}
+// hwo to process the wei_scales_offset of wei_decomp
+// template <typename Wmm>
+// dim_t jit_brgemm_kernel_t<Wmm>::wei_scales_offset(
+//         dim_t ld, bool is_tail) const noexcept {
+//     return (is_tail) ? types::data_type_size(brg.wei_decomp_scales_dt) * brg.ldb_tail
+//                      : types::data_type_size(brg.wei_decomp_scales_dt) * ld * brg.ld_block;
+// }
 
 template <typename Wmm>
 dim_t jit_brgemm_kernel_t<Wmm>::wei_zp_offset(
@@ -2966,8 +2968,10 @@ void jit_brgemm_kernel_t<Wmm>::gemm_microkernel(dim_t bd_block2,
                     }
                 };
 
-                mov(ptr[rsp + reg_bdb_loop_offs_], reg_bdb_loop);
-                mov(ptr[rsp + reg_ldb_loop_offs_], reg_ldb_loop);
+                // mov(ptr[rsp + reg_bdb_loop_offs_], reg_bdb_loop);
+                // mov(ptr[rsp + reg_ldb_loop_offs_], reg_ldb_loop);
+				reg_bdb_loop.save();
+				reg_ldb_loop.save();
 
                 auto vmm_zero_points = Vmm(isa_num_vregs(brg.isa_impl) - 1);
                 auto vmm_mask8 = Vmm(isa_num_vregs(brg.isa_impl) - 1);
