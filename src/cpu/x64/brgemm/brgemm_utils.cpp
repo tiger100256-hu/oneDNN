@@ -273,20 +273,26 @@ int calculate_max_bcast_block(brgemm_desc_t *brg, const int adj_ld_block2) {
     auto microkernel_max_reg_count
             = max_isa_regs - microkernel_regs - load_regs - max_bcst_regs;
 
+    // if (one_of(brg->dt_b, data_type::nf4) && brg->isa_impl == avx2) microkernel_max_reg_count -= 5;
+    // if (one_of(brg->dt_b, data_type::f4_e2m1) && brg->isa_impl == avx2) microkernel_max_reg_count -= 2;
+    // if (one_of(brg->dt_b, data_type::nf4, data_type::f4_e2m1) && brg->isa_impl != avx2) microkernel_max_reg_count -= 1;
+    // if (brg->with_wei_decomp_zero_points && brg->wei_decomp_zero_points_stride == 0) microkernel_max_reg_count -= 1;
+    // if (brg->with_src_dyn_quant) microkernel_max_reg_count -= 2;
+    // if (brg->with_src_dyn_quant && brg->with_wei_decomp_zero_points && brg->wei_decomp_zero_points_stride != 0) microkernel_max_reg_count -= adj_ld_block2;
+
+    // microkernel_max_reg_count /= adj_ld_block2;
+    // if (brg->with_src_dyn_quant) {
+    //     microkernel_max_reg_count /= 2;
+    // }
     if (one_of(brg->dt_b, data_type::nf4) && brg->isa_impl == avx2) microkernel_max_reg_count -= 5;
     if (one_of(brg->dt_b, data_type::f4_e2m1) && brg->isa_impl == avx2) microkernel_max_reg_count -= 2;
     if (one_of(brg->dt_b, data_type::nf4, data_type::f4_e2m1) && brg->isa_impl != avx2) microkernel_max_reg_count -= 1;
-    if (brg->with_wei_decomp_zero_points && brg->wei_decomp_zero_points_stride == 0) microkernel_max_reg_count -= 1;
-    if (brg->with_src_dyn_quant) microkernel_max_reg_count -= 2;
-    if (brg->with_src_dyn_quant && brg->with_wei_decomp_zero_points && brg->wei_decomp_zero_points_stride != 0) microkernel_max_reg_count -= adj_ld_block2;
-
-    microkernel_max_reg_count /= adj_ld_block2;
-    if (brg->with_src_dyn_quant) {
-        microkernel_max_reg_count /= 2;
-    }
+    if (brg->with_wei_decomp_zero_points && brg->wei_decomp_zero_points_stride == 0 && !brg->with_src_dyn_quant) microkernel_max_reg_count -= 1;
+    if (brg->with_src_dyn_quant) microkernel_max_reg_count -= 1;
 
     auto microkernel_max_bcast_block
-            = microkernel_max_reg_count / (adj_ld_block2 + brg->n_bcast_1_load);
+        = microkernel_max_reg_count / (adj_ld_block2 + brg->n_bcast_1_load);
+
 
     // ----- post-ops and store accumulators -----
     const int beta_regs = !one_of(brg->beta, 1.f, 0.f);
@@ -810,7 +816,7 @@ status_t brgemm_blocking_vmm(brgemm_desc_t *brg) {
     if (min_bcast_block < max_vpad) return status::unimplemented;
 
     const int min_block = nstl::max(1, max_vpad);
-
+    if (max_bcast_block == 0) max_bcast_block = 1;
     float best_bd_block_eff = 0.f;
     brg->bd_block = max_bcast_block;
     for (int bd_block = max_bcast_block; bd_block >= min_block; bd_block--) {
