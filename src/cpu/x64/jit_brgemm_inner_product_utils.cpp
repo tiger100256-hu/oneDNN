@@ -1768,6 +1768,10 @@ void jit_brgemm_ip_conf_t::init_scratchpad_base(
         scratchpad.book(key_src_quantized, jbgp.mb * jbgp.ic, sizeof(int8_t));
         scratchpad.book(key_src_dequantized_scales, jbgp.mb * div_up(jbgp.ic, jbgp.src_quant_group_size), sizeof(float));
     }
+
+    if (jbgp.with_dst_scales) {
+        scratchpad.book(key_conv_dst_scales, jbgp.nthr, sizeof(float));
+    }
 }
 
 void jit_brgemm_ip_fwd_conf_t::init_scratchpad(
