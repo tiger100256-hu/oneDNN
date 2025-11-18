@@ -211,7 +211,7 @@ private:
 
     const reg64_t reg_addr_batch = r13;
     const reg64_t reg_aux1_batch = rbp;
-    const reg64_savable_t reg_relative_batch {regscratchpad_, rbp};
+    const reg64_savable_t reg_relative_batch {regscratchpad_, rbx};
 
     const reg64_savable_t reg_bias {regscratchpad_, rbx, r24};
     const reg64_savable_t reg_src_scales {regscratchpad_, rbx, r23};
