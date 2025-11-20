@@ -647,6 +647,7 @@ struct brgemm_kernel_params_t {
     int32_t zp_a_val = 1;
 
     const void *ptr_wei_zero_points = nullptr;
+    const void *ptr_src_dscales = nullptr;
     size_t ic;
     dim_t dynamic_LDA = 0;
     dim_t dynamic_LDB = 0;

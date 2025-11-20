@@ -267,7 +267,9 @@ private:
     const reg64_savable_t reg_aux2_wei_scales {regscratchpad_, rbx};
     const reg64_savable_t reg_aux_ic {regscratchpad_, rbx};
     const reg64_savable_t reg_reg_a_offset {regscratchpad_, rbx};
-    const reg64_savable_t reg_aux2_src_scales {regscratchpad_, rbx};
+    const reg64_savable_t reg_src_dscales {regscratchpad_, rbx};
+    const reg64_savable_t reg_aux_src_dscales {regscratchpad_, rbx};
+    const reg64_savable_t reg_aux2_src_dscales {regscratchpad_, rbx};
 
     bool is_ldb_loop_ = false;
     bool with_binary_non_scalar_bcast_ = false;
@@ -1003,9 +1005,9 @@ void jit_brgemm_kernel_t<Wmm>::copy_post_ops_stack_values_to_aux(
         reg_ic.saveTo(reg_aux_ic);
     }
     if (brg.with_src_dyn_quant) {
-        reg_src_scales.restore();
-        reg_src_scales.saveTo(reg_aux_src_scales);
-        reg_src_scales.saveTo(reg_aux2_src_scales);
+        reg_src_dscales.restore();
+        reg_src_dscales.saveTo(reg_aux_src_dscales);
+        reg_src_dscales.saveTo(reg_aux2_src_dscales);
     }
     if (brg.zp_type_b != brgemm_broadcast_t::none) {
         reg_zp_comp_b.restore();
@@ -1079,8 +1081,8 @@ void jit_brgemm_kernel_t<Wmm>::read_params() {
     }
 
     if (brg.with_src_dyn_quant) {
-        mov(reg_src_scales, ptr[param1 + GET_OFF(ptr_src_scales)]);
-        reg_src_scales.save();
+        mov(reg_src_dscales, ptr[param1 + GET_OFF(ptr_src_dscales)]);
+        reg_src_dscales.save();
     }
 
     if (brg.zp_type_c != brgemm_broadcast_t::none) {
@@ -2746,7 +2748,7 @@ void jit_brgemm_kernel_t<Wmm>::gemm_microkernel_dyn_quant(dim_t bd_block2,
 
     auto& reg_local_src_scales = reg_local_wei_zp;
     auto vmm_src_scales = bcst();
-    reg_aux2_src_scales.restoreTo(reg_local_src_scales);
+    reg_aux2_src_dscales.restoreTo(reg_local_src_scales);
 
     for (int bd = bd_b; bd < bd_e; bd++) {
         uni_vbroadcastss(vmm_src_scales, ptr[reg_local_src_scales + bd * brg.src_scales_stride * sizeof(float)]);
@@ -3417,7 +3419,7 @@ void jit_brgemm_kernel_t<Wmm>::bs_loop(dim_t bd_block2, bool is_bdb_tail,
                         }
 
                         if (brg.with_src_dyn_quant) {
-                            ic_group_shift(reg_aux_src_scales.booking(), reg_aux2_src_scales.booking(),
+                            ic_group_shift(reg_aux_src_dscales.booking(), reg_aux2_src_dscales.booking(),
                                            brg.src_scales_group_size, sizeof(float));
                         }
                         reg_aux_ic.restoreTo(reg_local_ic);
@@ -3652,9 +3654,9 @@ void jit_brgemm_kernel_t<Wmm>::bdb_loop() {
         add(reg_a_offset, bdb_A_offset(bd_block2));
 
         if (brg.with_src_dyn_quant) {
-            reg_src_scales.restore();
-            add(reg_src_scales, bd_block2 * brg.bd_block * brg.src_scales_stride * sizeof(float));
-            reg_src_scales.save();
+            reg_src_dscales.restore();
+            add(reg_src_dscales, bd_block2 * brg.bd_block * brg.src_scales_stride * sizeof(float));
+            reg_src_dscales.save();
         }
 
         advance_bd_block2_post_op_regs(bd_block2);
