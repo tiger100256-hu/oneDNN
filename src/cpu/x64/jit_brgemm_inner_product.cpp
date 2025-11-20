@@ -142,6 +142,9 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
         qsrc = scratchpad.template get<int8_t>(key_src_quantized);
         src_dscales = scratchpad.template get<float>(key_src_dequantized_scales);
         src_grouped_sum = scratchpad.template get<int32_t>(key_src_grouped_sum);
+        // if(src_grouped_sum == nullptr) {
+        //      std::cout << "src_grouped_sum is nulltpr" << std::endl;
+        // }
 
         int ic_groups = div_up(jbgp.ic, jbgp.src_quant_group_size);
         int ic_sum_groups = div_up(jbgp.ic, jbgp.src_sum_group_size);
@@ -489,7 +492,7 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
                         post_ops_binary_rhs_arg_vec.data(),
                         static_cast<size_t>(oc), 0, dst, 0, nullptr, nullptr,
                         nullptr, false, 1, false, false, src_scales,
-                        wei_scales ? reinterpret_cast<const char *>(wei_scales)
+                        wei_scales_f ? reinterpret_cast<const char *>(wei_scales_f)
                                         + jbgp.is_oc_scale * oc * sizeof(float)
                                    : nullptr,
                         dst_scales_ptr};
@@ -627,7 +630,7 @@ status_t brgemm_inner_product_fwd_t<isa>::execute_forward(
                         post_ops_binary_rhs_arg_vec.data(),
                         static_cast<size_t>(oc), 0, dst, 0, nullptr, nullptr,
                         nullptr, false, 1, false, false, src_scales,
-                        wei_scales ? reinterpret_cast<const char *>(wei_scales)
+                        wei_scales_f ? reinterpret_cast<const char *>(wei_scales_f)
                                         + jbgp.is_oc_scale * oc * sizeof(float)
                                    : nullptr,
                         dst_scales_ptr};
