@@ -102,7 +102,7 @@ void brgemm_kernel_execute(const brgemm_kernel_t *brg_kernel, int bs,
         brgemm_p.dynamic_LDC = dynamic_values->dynamic_LDC;
         brgemm_p.dynamic_LDD = dynamic_values->dynamic_LDD;
     }
-    brgemm_p.ptr_wei_scales = ptr_wei_scales;
+    brgemm_p.ptr_wei_dscales = ptr_wei_scales;
     brgemm_p.ptr_wei_zero_points = ptr_wei_zero_points;
     brgemm_p.ptr_src_dscales = ptr_src_scales;
     brgemm_p.ic = ic;
@@ -130,7 +130,7 @@ void brgemm_kernel_execute(const brgemm_kernel_t *brg_kernel, int bs,
     brgemm_p.do_apply_comp = 0;
     brgemm_p.skip_accm = 0;
     brgemm_p.BS = bs;
-    brgemm_p.ptr_wei_scales = ptr_wei_scales;
+    brgemm_p.ptr_wei_dscales = ptr_wei_scales;
     brgemm_p.ptr_wei_zero_points = ptr_wei_zero_points;
     brgemm_p.ptr_src_dscales = ptr_src_scales;
     brgemm_p.ic = ic;
@@ -178,6 +178,7 @@ void brgemm_kernel_execute_postops(const brgemm_kernel_t *brg_kernel, int bs,
     brgemm_p.c_zp_values = post_ops_data.c_zp_values;
     brgemm_p.ptr_wei_zero_points = ptr_wei_zero_points;
     brgemm_p.ptr_src_dscales = ptr_src_scales;
+    brgemm_p.ptr_wei_dscales = ptr_wei_scales;
     brgemm_p.ic = ic;
     if (dynamic_values) {
         brgemm_p.dynamic_LDA = dynamic_values->dynamic_LDA;
@@ -225,6 +226,7 @@ void brgemm_kernel_execute_postops(const brgemm_kernel_t *brg_kernel, int bs,
     brgemm_p.c_zp_values = post_ops_data.c_zp_values;
     brgemm_p.ptr_wei_zero_points = ptr_wei_zero_points;
     brgemm_p.ptr_src_dscales = ptr_src_scales;
+    brgemm_p.ptr_wei_dscales = ptr_wei_scales;
     brgemm_p.ic = ic;
     if (dynamic_values) {
         brgemm_p.dynamic_LDA = dynamic_values->dynamic_LDA;

@@ -264,7 +264,9 @@ private:
     const reg64_savable_t reg_aux2_wei_zp {regscratchpad_, rbx};
     const reg64_savable_t reg_ic {regscratchpad_, rbx};
     const reg64_savable_t reg_aux2_D {regscratchpad_, rbx};
-    const reg64_savable_t reg_aux2_wei_scales {regscratchpad_, rbx};
+    const reg64_savable_t reg_wei_dscales {regscratchpad_, rbx};
+    const reg64_savable_t reg_aux_wei_dscales {regscratchpad_, rbx};
+    const reg64_savable_t reg_aux2_wei_dscales {regscratchpad_, rbx};
     const reg64_savable_t reg_aux_ic {regscratchpad_, rbx};
     const reg64_savable_t reg_reg_a_offset {regscratchpad_, rbx};
     const reg64_savable_t reg_src_dscales {regscratchpad_, rbx};
@@ -899,10 +901,10 @@ void jit_brgemm_kernel_t<Wmm>::ldb_regs_shift(dim_t ld_block2, bool is_tail) {
     }
 
     if (brg.with_wei_decomp) {
-        reg_aux_wei_scales.restore();
-        add(reg_aux_wei_scales, (is_tail) ? decomp_wei_scales_offset(1, true) : decomp_wei_scales_offset(ld_block2));
-        reg_aux_wei_scales.save();
-        reg_aux_wei_scales.saveTo(reg_aux2_wei_scales);
+        reg_aux_wei_dscales.restore();
+        add(reg_aux_wei_dscales, (is_tail) ? decomp_wei_scales_offset(1, true) : decomp_wei_scales_offset(ld_block2));
+        reg_aux_wei_dscales.save();
+        reg_aux_wei_dscales.saveTo(reg_aux2_wei_dscales);
 
         reg_aux_wei_zp.restore();
         add(reg_aux_wei_zp, (is_tail) ? wei_zp_offset(1, true) : wei_zp_offset(ld_block2));
@@ -969,10 +971,6 @@ void jit_brgemm_kernel_t<Wmm>::copy_post_ops_stack_values_to_aux(
             reg_buf.restore();
             reg_buf.saveTo(reg_aux_compensation);
         }
-        if (brg.with_wei_scales) {
-            reg_wei_scales.restore();
-            reg_wei_scales.saveTo(reg_aux_wei_scales);
-        }
 
         if (brg.zp_type_a != brgemm_broadcast_t::none) {
             reg_zp_comp_a.restore();
@@ -985,9 +983,9 @@ void jit_brgemm_kernel_t<Wmm>::copy_post_ops_stack_values_to_aux(
         }
 
         if (brg.with_wei_decomp_scales) {
-            reg_wei_scales.restore();
-            reg_wei_scales.saveTo(reg_aux_wei_scales);
-            reg_wei_scales.saveTo(reg_aux2_wei_scales);
+            reg_wei_dscales.restore();
+            reg_wei_dscales.saveTo(reg_aux_wei_dscales);
+            reg_wei_dscales.saveTo(reg_aux2_wei_dscales);
         } else if (brg.with_wei_scales) {
             reg_wei_scales.restore();
             reg_wei_scales.saveTo(reg_aux_wei_scales);
@@ -1067,8 +1065,8 @@ void jit_brgemm_kernel_t<Wmm>::read_params() {
     }
 
     if (brg.with_wei_decomp) {
-        mov(reg_wei_scales, ptr[param1 + GET_OFF(ptr_wei_scales)]);
-        reg_wei_scales.save();
+        mov(reg_wei_dscales, ptr[param1 + GET_OFF(ptr_wei_dscales)]);
+        reg_wei_dscales.save();
 
         mov(reg_wei_zp, ptr[param1 + GET_OFF(ptr_wei_zero_points)]);
         reg_wei_zp.save();
@@ -2638,7 +2636,7 @@ void jit_brgemm_kernel_t<Wmm>::gemm_microkernel_dyn_quant(dim_t bd_block2,
 //         mov(reg_ptr, (size_t)mask_low_2_bits);
 //         uni_vmovups(vmm_mask_low, ptr[reg_ptr]);
 //     }
-    reg_aux2_wei_scales.restoreTo(reg_local_wei_scales);
+    reg_aux2_wei_dscales.restoreTo(reg_local_wei_scales);
 
     for (int bd = bd_b; bd < bd_e; bd++) {
         for (int ld = 0; ld < ld_block2; ld++) {
@@ -3143,7 +3141,7 @@ void jit_brgemm_kernel_t<Wmm>::gemm_microkernel(dim_t bd_block2,
                         vmm_zero_points = Vmm(isa_num_vregs(brg.isa_impl) - 2);
                     }
                 }
-                reg_aux2_wei_scales.restoreTo(reg_local_wei_scales);
+                reg_aux2_wei_dscales.restoreTo(reg_local_wei_scales);
                 reg_aux2_wei_zp.restoreTo(reg_local_wei_zp);
 
                 if (brg.with_wei_decomp_zero_points && brg.wei_decomp_zero_points_stride == 0) {
@@ -3409,7 +3407,7 @@ void jit_brgemm_kernel_t<Wmm>::bs_loop(dim_t bd_block2, bool is_bdb_tail,
                         reg_a_offset.save();// preserve rdx for idiv
 
                         if (brg.with_wei_decomp_scales && brg.wei_decomp_scales_stride != 0) {
-                            ic_group_shift(reg_aux_wei_scales.booking(), reg_aux2_wei_scales.booking(),
+                            ic_group_shift(reg_aux_wei_dscales.booking(), reg_aux2_wei_dscales.booking(),
                                            brg.wei_decomp_scales_group_size, brg.wei_decomp_scales_stride * types::data_type_size(brg.wei_decomp_scales_dt));
                         }
 
