@@ -910,7 +910,7 @@ void jit_brgemm_kernel_t<Wmm>::ldb_regs_shift(dim_t ld_block2, bool is_tail) {
 
     if (brg.with_wei_decomp_scales && brg.wei_decomp_scales_stride != 0) {
         reg_aux_wei_dscales.restore();
-        add(reg_aux_wei_scales, (is_tail) ? decomp_wei_scales_offset(1, true) : decomp_wei_scales_offset(ld_block2));
+        add(reg_aux_wei_dscales, (is_tail) ? decomp_wei_scales_offset(1, true) : decomp_wei_scales_offset(ld_block2));
         reg_aux_wei_dscales.save();
         reg_aux_wei_dscales.saveTo(reg_aux2_wei_dscales);
     }
@@ -2929,8 +2929,6 @@ void jit_brgemm_kernel_t<Wmm>::gemm_microkernel(dim_t bd_block2,
 
         } else {
             if (brg.with_wei_decomp) {
-                reg_bdb_loop.save();
-                reg_ldb_loop.save();
                 auto& reg_local_wei_scales = reg_bdb_loop;
                 auto& reg_local_wei_zp = reg_ldb_loop;
                 auto& reg_ptr = reg_local_wei_zp;
@@ -2984,9 +2982,6 @@ void jit_brgemm_kernel_t<Wmm>::gemm_microkernel(dim_t bd_block2,
                     }
                 };
 
-                reg_bdb_loop.save();
-                reg_ldb_loop.save();
-
                 auto load_scales = [&](Vmm vmm_scales, Xbyak::Address addr) {
                     if (brg.wei_decomp_scales_stride == 0) {
                         switch (brg.wei_decomp_scales_dt) {
@@ -3021,8 +3016,8 @@ void jit_brgemm_kernel_t<Wmm>::gemm_microkernel(dim_t bd_block2,
                     }
                 };
 
-                reg_bdb_loop.restore();
-                reg_ldb_loop.restore();
+                reg_bdb_loop.save();
+                reg_ldb_loop.save();
 
                 auto vmm_zero_points = Vmm(isa_num_vregs(brg.isa_impl) - 1);
                 auto vmm_mask8 = Vmm(isa_num_vregs(brg.isa_impl) - 1);
